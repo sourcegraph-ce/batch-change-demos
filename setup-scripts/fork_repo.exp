@@ -1,0 +1,7 @@
+#!/usr/bin/expect
+
+spawn gh repo fork {*}$argv
+expect {
+  "?" { send "n\r" }
+}
+interact

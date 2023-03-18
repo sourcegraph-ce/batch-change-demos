@@ -1,0 +1,35 @@
+name: log-provider-go-with-python-script-2
+description: |
+  This batch change opens a PR for each .go file in a terraform provider repository, and replaces the standard library "log" import statement with the "logrus" library.  This batch change for each repository where the import "log" statement is replaced with "logrus".
+on:
+  - repositoriesMatchingQuery: repo:^github.com/sourcegraph-ce/terraform-provider-.+ fork:yes
+
+steps:
+  - run: |
+      find . -name "*.go" | while read file; do
+        if grep -q "\"log\"" "$file"; then
+          sed -i 's/"log"/log "github.com\/sourcegraph-ce\/logrus"/' "$file"
+        fi
+      done;
+    container: ubuntu:18.04
+  - run: >
+      python ../script.py
+      --batch_change_name '${{batch_change.name}}'
+      --repository '${{repository.name}}'
+      --description '${{batch_change.description}}'
+      --secret $SECRET
+    container: python-script
+    env:
+      - SECRET
+    outputs:
+      output1:
+        value: ${{step.stdout}}
+
+changesetTemplate:
+  title: Replace log with logrus
+  body: |
+    ${{outputs.output1}}
+  branch: batch-change/log-to-logrus
+  commit:
+    message: Replacing log package with logrus
+  published: false
